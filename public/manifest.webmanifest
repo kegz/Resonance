@@ -1,0 +1,8 @@
+{
+  "name": "Resonance",
+  "short_name": "Resonance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080d18",
+  "theme_color": "#080d18"
+}
