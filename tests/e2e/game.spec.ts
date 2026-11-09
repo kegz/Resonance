@@ -43,6 +43,7 @@ test('import, play, pause, rewind, and persist accessible settings', async ({ pa
   await page.keyboard.press('r');
   await expect(page.locator('#time')).toHaveText('0:00 / 0:15');
   await page.getByLabel('Visual intensity').fill('0');
+  await expect(page.locator('#settings-state')).toHaveText('Settings saved.');
   await page.reload();
   await expect(page.getByLabel('Visual intensity')).toHaveValue('0');
   expect(errors).toEqual([]);

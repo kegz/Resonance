@@ -53,6 +53,7 @@ animation. Effects avoid full-screen flashes or camera shake. Touch controls
 support concurrent movement/jump and pointer cancellation. Portrait browser
 layouts remain usable; Android requests landscape. Settings and per-song best
 scores use IndexedDB, falling back to session defaults if storage is unavailable.
+Wait for **Settings saved** before reloading or closing the page.
 
 ## Android
 

@@ -22,11 +22,12 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || url.origin !== self.location.origin ||
       url.pathname.startsWith('/_capacitor_')) return;
   event.respondWith((async () => {
-    const cached = await caches.match(event.request);
+    const cache = await caches.open(CACHE);
+    // Module requests include Origin; precache requests do not. Assets are public and same-origin.
+    const cached = await cache.match(event.request, { ignoreVary: true });
     if (cached) return cached;
     const response = await fetch(event.request);
     if (response.ok && url.pathname.startsWith('/assets/')) {
-      const cache = await caches.open(CACHE);
       await cache.put(event.request, response.clone());
     }
     return response;

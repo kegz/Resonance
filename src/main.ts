@@ -40,7 +40,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
           <label>Volume <input id="volume" type="range" min="0" max="1" step="0.05" value="0.7"></label>
           <label>Visual intensity <input id="intensity" type="range" min="0" max="1" step="0.05" value="0.4"></label>
           <label>Difficulty <select id="difficulty"><option value="1">Gentle</option><option value="2">Standard</option><option value="3">Challenging</option></select></label>
-        </div><p class="muted">Intensity zero removes music pulses. System reduced-motion preferences are respected. Difficulty applies to the next level.</p>
+        </div><p id="settings-state" class="muted" aria-live="polite">Preferences stay on this device.</p><p class="muted">Intensity zero removes music pulses. System reduced-motion preferences are respected. Difficulty applies to the next level.</p>
       </section>
       <section><h2>Find your rhythm</h2><p class="instructions">A / D or ← / → move · Space jumps · E interacts<br>R rewinds game and music · Esc pauses</p><p id="best" class="muted">Scores are saved only on this device.</p></section>
     </div>
@@ -75,6 +75,7 @@ let rewinding = false;
 let scored = false;
 let lifecycleGeneration = 0;
 let lastAudioTime = 0;
+let preferencesRevision = 0;
 const input = new InputControls(element('stage'), () => { void togglePlayback(); });
 
 function buttons() {
@@ -205,12 +206,19 @@ element('restart').addEventListener('click', () => { void loadTrack(trackIndex);
 
 for (const key of ['volume', 'intensity', 'difficulty'] as const) {
   element<HTMLInputElement>(key).addEventListener('input', (event) => {
+    const revision = ++preferencesRevision;
     preferences[key] = Number((event.target as HTMLInputElement).value);
     audio.setVolume(preferences.volume);
-    void settings.savePreferences(preferences).catch(() => status('Settings apply for this session; device storage is unavailable.'));
+    element('settings-state').textContent = 'Saving settings…';
+    void settings.savePreferences({ ...preferences }).then(() => {
+      if (revision === preferencesRevision) element('settings-state').textContent = 'Settings saved.';
+    }).catch(() => {
+      if (revision === preferencesRevision) element('settings-state').textContent = 'Settings apply only to this session; device storage is unavailable.';
+    });
   });
 }
 void settings.preferences().then((value) => {
+  if (preferencesRevision) return;
   preferences = value;
   for (const key of ['volume', 'intensity', 'difficulty'] as const) element<HTMLInputElement>(key).value = String(value[key]);
   audio.setVolume(value.volume);
