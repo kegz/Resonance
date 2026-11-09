@@ -24,7 +24,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <button id="restart" disabled>Restart</button>
       <button id="next" disabled>Next track →</button>
     </section>
-    <section id="stage" aria-label="Music-reactive adventure">
+    <section id="stage" tabindex="-1" aria-label="Music-reactive adventure">
       <div id="game" role="img" aria-label="Game world. Collect golden notes, avoid triangular hazards, and interact with the exit."></div>
       <div class="hud"><span id="health">HEALTH —</span><span id="objectives">NOTES —</span><span id="time">0:00</span></div>
       <div id="welcome"><h2>Every song is a new beginning.</h2><p>Collect the notes. Reach the gate.<br>Rewind the last five seconds to try again.</p></div>
@@ -97,6 +97,12 @@ function pause() {
 
 async function play() {
   if (!loop || busy) return;
+  if (analysis && audio.currentTime >= analysis.duration) {
+    loop.reset();
+    audio.seek(0);
+    scored = false;
+    rewinding = false;
+  }
   const generation = lifecycleGeneration;
   if (!await requestAudioFocus()) {
     status('Audio is in use by another application. Try Resume when it is available.');
@@ -115,11 +121,13 @@ async function play() {
   lastAudioTime = audio.currentTime;
   status('Collect every golden note, then press E at the gate. R rewinds five seconds.');
   buttons();
+  element('stage').focus({ preventScroll: true });
 }
 
 async function togglePlayback() {
   try { if (audio.playing) pause(); else await play(); }
   catch (error) { pause(); status(error instanceof Error ? error.message : 'Playback could not start.'); }
+  finally { if (loop) element('stage').focus({ preventScroll: true }); }
 }
 
 async function saveScore() {

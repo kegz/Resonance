@@ -39,7 +39,6 @@ test('import, play, pause, rewind, and persist accessible settings', async ({ pa
   const paused = await page.locator('#time').textContent();
   await page.waitForTimeout(300);
   await expect(page.locator('#time')).toHaveText(paused!);
-  await page.locator('h1').click();
   await page.keyboard.press('r');
   await expect(page.locator('#time')).toHaveText('0:00 / 0:15');
   await page.getByLabel('Visual intensity').fill('0');
@@ -63,6 +62,21 @@ test('focus interruption pauses without automatic resume', async ({ page }) => {
   await expect(page.locator('#time')).toHaveText(before!);
   await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
+  await expect(page.locator('#stage')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeEnabled();
+});
+
+test('resuming a finished track restarts both audio and the game clock', async ({ page }) => {
+  await page.goto('/');
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Import music' }).click();
+  await (await chooser).setFiles({ name: 'short.wav', mimeType: 'audio/wav', buffer: wave(3) });
+  await expect(page.getByRole('status')).toHaveText('Playlist complete. Restart this track or import more music.', { timeout: 10000 });
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await expect(page.locator('#time')).toHaveText('0:00 / 0:03');
+  await expect(page.locator('#stage')).toBeFocused();
+  await expect(page.locator('#time')).toHaveText('0:01 / 0:03', { timeout: 5000 });
 });
 
 test('invalid files recover without breaking import', async ({ page }) => {
